@@ -75,20 +75,20 @@ spec:
               value: "3000"
           resources:
             requests:
-              cpu: "50m"
-              memory: "128Mi"
+              cpu: "10m"
+              memory: "64Mi"
             limits:
               cpu: "500m"
               memory: "512Mi"
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: 3000
             initialDelaySeconds: 15
             periodSeconds: 30
