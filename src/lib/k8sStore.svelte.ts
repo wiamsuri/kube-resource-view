@@ -167,3 +167,20 @@ export function applySSEEvent(event: SSEEvent) {
     }
   }
 }
+
+class TooltipStore {
+  active = $state<{ pod: PodInfo; x: number; y: number } | null>(null);
+
+  show(pod: PodInfo, x: number, y: number) {
+    this.active = { pod, x, y };
+  }
+
+  hide(podUid: string) {
+    if (this.active?.pod.uid === podUid) {
+      this.active = null;
+    }
+  }
+}
+
+export const tooltipStore = new TooltipStore();
+

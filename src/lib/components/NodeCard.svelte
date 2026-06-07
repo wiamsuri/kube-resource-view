@@ -22,13 +22,15 @@
   const cpuCap = $derived(node.allocatable.cpuMillicores);
   const memCap = $derived(node.allocatable.memoryBytes);
 
-  // Sorted: errors first, then pending, then running
+  // Sorted: errors first, then pending, then running. Secondary: alphabetically by name.
   const sortedPods = $derived([...pods].sort((a, b) => {
     const order: Record<string, number> = {
       Failed: 0, Unknown: 1, Terminating: 2, Pending: 3,
       Running: 4, Succeeded: 5,
     };
-    return (order[a.phase] ?? 4) - (order[b.phase] ?? 4);
+    const phaseDiff = (order[a.phase] ?? 4) - (order[b.phase] ?? 4);
+    if (phaseDiff !== 0) return phaseDiff;
+    return a.name.localeCompare(b.name);
   }));
 </script>
 
@@ -81,18 +83,56 @@
 
   <!-- ── Pod grid / list ─────────────────────────────────────── -->
   {#if sortedPods.length > 0}
-    <div class="pod-container" class:pod-grid={viewMode === 'default'} class:pod-list={viewMode === 'detail'}>
-      {#each sortedPods as pod (pod.uid)}
-        <PodBlock
-          {pod}
-          {sizingMetric}
-          {viewMode}
-          nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
-          {highlightKey}
-          {onHighlight}
-        />
-      {/each}
-    </div>
+    {#if viewMode === 'default'}
+      {@const regularPods = sortedPods.filter(p => p.ownerKind !== 'DaemonSet')}
+      {@const daemonSetPods = sortedPods.filter(p => p.ownerKind === 'DaemonSet')}
+
+      <div class="pods-wrapper">
+        <div class="pod-container pod-grid">
+          {#each regularPods as pod (pod.uid)}
+            <PodBlock
+              {pod}
+              {sizingMetric}
+              {viewMode}
+              nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
+              {highlightKey}
+              {onHighlight}
+            />
+          {/each}
+        </div>
+
+        {#if daemonSetPods.length > 0}
+          {#if regularPods.length > 0}
+            <div class="ds-divider"></div>
+          {/if}
+          <div class="pod-container pod-grid">
+            {#each daemonSetPods as pod (pod.uid)}
+              <PodBlock
+                {pod}
+                {sizingMetric}
+                {viewMode}
+                nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
+                {highlightKey}
+                {onHighlight}
+              />
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {:else}
+      <div class="pod-container pod-list">
+        {#each sortedPods as pod (pod.uid)}
+          <PodBlock
+            {pod}
+            {sizingMetric}
+            {viewMode}
+            nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
+            {highlightKey}
+            {onHighlight}
+          />
+        {/each}
+      </div>
+    {/if}
   {:else}
     <div class="no-pods">No pods</div>
   {/if}
@@ -100,11 +140,11 @@
 
 <style>
 .node-card {
-  border-radius: 14px;
-  padding: 1rem;
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.4rem;
   transition: box-shadow 0.2s;
 }
 .node-card:hover {
@@ -174,22 +214,36 @@
 .node-gauges {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.6rem;
+  gap: 0.35rem;
+  padding: 0.45rem;
   background: var(--bg-elevated);
   border-radius: 8px;
   border: 1px solid var(--border);
 }
 
+.ds-divider {
+  width: 100%;
+  height: 1px;
+  border-top: 1px dashed var(--border);
+  margin: 0.1rem 0;
+  opacity: 0.6;
+}
+
+.pods-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
 /* Pod container */
-.pod-container { margin-top: 0.25rem; }
+.pod-container { margin-top: 0.15rem; }
 
 .pod-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 3px;
   align-content: flex-start;
-  min-height: 30px;
+  min-height: 16px;
 }
 
 .pod-list {

@@ -44,6 +44,12 @@
         <div class="mini-bar req" style="width:{pct(totals.reqCpu, totals.capCpu)}%"></div>
         <div class="mini-bar lim" style="width:{pct(totals.limCpu, totals.capCpu)}%"></div>
         <div class="mini-bar use" style="width:{pct(totals.useCpu, totals.capCpu)}%"></div>
+        {#if totals.reqCpu > 0}
+          <div class="mini-bar-marker req" style="left:{pct(totals.reqCpu, totals.capCpu)}%"></div>
+        {/if}
+        {#if totals.limCpu > 0}
+          <div class="mini-bar-marker lim" style="left:{pct(totals.limCpu, totals.capCpu)}%"></div>
+        {/if}
       </div>
       <span class="res-nums">
         <span class="use-val">{formatCpu(totals.useCpu)}</span>
@@ -59,6 +65,12 @@
         <div class="mini-bar req" style="width:{pct(totals.reqMem, totals.capMem)}%"></div>
         <div class="mini-bar lim" style="width:{pct(totals.limMem, totals.capMem)}%"></div>
         <div class="mini-bar use" style="width:{pct(totals.useMem, totals.capMem)}%"></div>
+        {#if totals.reqMem > 0}
+          <div class="mini-bar-marker req" style="left:{pct(totals.reqMem, totals.capMem)}%"></div>
+        {/if}
+        {#if totals.limMem > 0}
+          <div class="mini-bar-marker lim" style="left:{pct(totals.limMem, totals.capMem)}%"></div>
+        {/if}
       </div>
       <span class="res-nums">
         <span class="use-val">{formatMemory(totals.useMem)}</span>
@@ -176,6 +188,17 @@
 .mini-bar.req { background: var(--gauge-request); opacity: 0.5; }
 .mini-bar.lim { background: var(--gauge-limit);   opacity: 0.4; }
 .mini-bar.use { background: var(--gauge-usage);   }
+.mini-bar-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  z-index: 10;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.mini-bar-marker.req { background: var(--gauge-request); }
+.mini-bar-marker.lim { background: var(--gauge-limit); }
 
 .res-nums {
   font-family: var(--font-mono);

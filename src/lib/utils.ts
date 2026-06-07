@@ -95,9 +95,9 @@ export const POD_COLORS: Record<string, string> = {
 
 import type { SizingMetric } from './types.js';
 
-const BASE_SIZE = 24;  // px
-const MAX_SIZE  = 80;  // px
-const MIN_SIZE  = 14;  // px
+const BASE_SIZE = 16;  // px
+const MAX_SIZE  = 48;  // px
+const MIN_SIZE  = 10;  // px
 
 export function getPodSize(pod: PodInfo, metric: SizingMetric, nodeCapacity: number): number {
   if (metric === 'uniform' || nodeCapacity === 0) return BASE_SIZE;

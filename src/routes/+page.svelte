@@ -7,12 +7,14 @@
     nodes, pods, metrics,
     getAllNamespaces,
     applyInitialData, applySSEEvent,
+    tooltipStore,
   } from '$lib/k8sStore.svelte.js';
 
   import ClusterHeader            from '$lib/components/ClusterHeader.svelte';
   import ControlsBar              from '$lib/components/ControlsBar.svelte';
   import NodeCard                 from '$lib/components/NodeCard.svelte';
   import MetricsUnavailableBanner from '$lib/components/MetricsUnavailableBanner.svelte';
+  import PodTooltip               from '$lib/components/PodTooltip.svelte';
 
   let { data }: { data: PageData } = $props();
 
@@ -202,6 +204,14 @@
     onViewMode={(v) => (viewMode = v)}
     onToggleDark={toggleDark}
   />
+
+  {#if tooltipStore.active}
+    <PodTooltip
+      pod={tooltipStore.active.pod}
+      x={tooltipStore.active.x}
+      y={tooltipStore.active.y}
+    />
+  {/if}
 </div>
 
 <style>
@@ -245,7 +255,7 @@
 /* Node grid */
 .node-grid {
   flex: 1;
-  padding: 1.25rem 1.5rem 0.5rem;
+  padding: 1.25rem 1.5rem 5.5rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1rem;

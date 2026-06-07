@@ -34,6 +34,7 @@
   ];
 
   let nsOpen = $state(false);
+  let minimized = $state(false);
 
   function toggleNs(ns: string) {
     if (namespaces.includes(ns)) {
@@ -60,7 +61,8 @@
   };
 </script>
 
-<div class="controls-bar glass">
+<div class="controls-bar glass" class:is-minimized={minimized}>
+  <div class="controls-content">
   <!-- Search -->
   <div class="search-wrap">
     <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -200,21 +202,111 @@
       </svg>
     {/if}
   </button>
+  </div>
+
+  <!-- Minimize toggle -->
+  <button
+    id="minimize-btn"
+    class="icon-btn minimize-btn"
+    onclick={() => (minimized = !minimized)}
+    title={minimized ? 'Expand controls' : 'Minimize controls'}
+    aria-label="Toggle minimize"
+  >
+    {#if minimized}
+      <!-- Search icon to expand -->
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+    {:else}
+      <!-- Minimize icon -->
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14l-7 7"/>
+      </svg>
+    {/if}
+  </button>
+
+  {#if minimized && (search || namespaces.length > 0 || statusFilters.length > 0)}
+    <span class="active-badge-dot" title="Active filters or search"></span>
+  {/if}
 </div>
 
 <style>
 .controls-bar {
-  position: sticky;
-  bottom: 1rem;
+  position: fixed;
+  bottom: 0.8rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 42px;
   z-index: 40;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 0.5rem;
-  padding: 0.6rem 1rem;
+  padding: 0 1rem;
   border-radius: 14px;
-  margin: 0 1.5rem 1.5rem;
   box-shadow: 0 4px 24px rgba(0,0,0,0.2);
+  transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  overflow: hidden;
+}
+
+.controls-content {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  flex: 1;
+  opacity: 1;
+  transition: opacity 0.15s ease;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.controls-content::-webkit-scrollbar {
+  display: none;
+}
+
+.controls-bar.is-minimized {
+  left: calc(100% - 42px - 1.5rem);
+  right: 1.5rem;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 50%;
+  justify-content: center;
+  align-content: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px var(--border);
+}
+
+.controls-bar.is-minimized .controls-content {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.controls-bar.is-minimized:hover {
+  transform: scale(1.08);
+  background: var(--bg-surface);
+  border-color: var(--accent);
+}
+
+.minimize-btn {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.active-badge-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent);
+  border: 1.5px solid var(--bg-surface);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent);
+  z-index: 5;
 }
 
 .search-wrap {
@@ -255,7 +347,7 @@
 }
 
 /* Status chips */
-.status-filters { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.status-filters { display: flex; gap: 0.3rem; flex-wrap: nowrap; }
 .status-chip {
   display: flex;
   align-items: center;

@@ -32,6 +32,13 @@
     <div class="gauge-bar lim" style="width:{limPct}%" title="Limits: {formatValue(limit)} ({limPct.toFixed(1)}%)"></div>
     <!-- Actual Usage -->
     <div class="gauge-bar use {isOver ? 'over' : ''}" style="width:{usePct}%" title="Usage: {formatValue(usage)} ({usePct.toFixed(1)}%)"></div>
+    <!-- Tick Markers on top of Usage -->
+    {#if request > 0}
+      <div class="gauge-marker req" style="left:{reqPct}%" title="Requests: {formatValue(request)} ({reqPct.toFixed(1)}%)"></div>
+    {/if}
+    {#if limit > 0}
+      <div class="gauge-marker lim" style="left:{limPct}%" title="Limits: {formatValue(limit)} ({limPct.toFixed(1)}%)"></div>
+    {/if}
   </div>
   <div class="gauge-row-labels">
     <div class="gl req"><span class="gl-dot"></span>{formatValue(request)}</div>
@@ -71,6 +78,18 @@
 .gauge-bar.lim { background: var(--gauge-limit);   opacity: 0.45; }
 .gauge-bar.use { background: var(--gauge-usage); }
 .gauge-bar.use.over { background: var(--gauge-over); }
+
+.gauge-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  z-index: 10;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.gauge-marker.req { background: var(--gauge-request); }
+.gauge-marker.lim { background: var(--gauge-limit); }
 
 .gauge-row-labels {
   display: flex;

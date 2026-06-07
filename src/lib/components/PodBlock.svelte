@@ -3,7 +3,7 @@
   import type { SizingMetric, ViewMode } from '$lib/types.js';
   import { getPodColorClass, getPodSize, getControllerKey } from '$lib/utils.js';
   import { formatCpu, formatMemory, formatAge } from '$lib/utils.js';
-  import PodTooltip from './PodTooltip.svelte';
+  import { tooltipStore } from '$lib/k8sStore.svelte.js';
 
   interface Props {
     pod: PodInfo;
@@ -23,7 +23,6 @@
     onHighlight,
   }: Props = $props();
 
-  let hovered   = $state(false);
   let mouseX    = $state(0);
   let mouseY    = $state(0);
 
@@ -36,9 +35,20 @@
     viewMode === 'default' ? getPodSize(pod, sizingMetric, nodeCapacity) : 0
   );
 
-  function onMouseMove(e: MouseEvent) {
+  function handleMouseEnter(e: MouseEvent) {
     mouseX = e.clientX;
     mouseY = e.clientY;
+    tooltipStore.show(pod, mouseX, mouseY);
+  }
+
+  function handleMouseMove(e: MouseEvent) {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    tooltipStore.show(pod, mouseX, mouseY);
+  }
+
+  function handleMouseLeave() {
+    tooltipStore.hide(pod.uid);
   }
 
   function onClick() {
@@ -64,9 +74,9 @@
     role="button"
     tabindex="0"
     aria-label="Pod {pod.name}"
-    onmouseenter={() => (hovered = true)}
-    onmouseleave={() => (hovered = false)}
-    onmousemove={onMouseMove}
+    onmouseenter={handleMouseEnter}
+    onmouseleave={handleMouseLeave}
+    onmousemove={handleMouseMove}
     onclick={onClick}
     onkeydown={(e) => e.key === 'Enter' && onClick()}
   ></div>
@@ -81,9 +91,9 @@
     class:pod-dimmed={isDimmed}
     role="button"
     tabindex="0"
-    onmouseenter={() => (hovered = true)}
-    onmouseleave={() => (hovered = false)}
-    onmousemove={onMouseMove}
+    onmouseenter={handleMouseEnter}
+    onmouseleave={handleMouseLeave}
+    onmousemove={handleMouseMove}
     onclick={onClick}
     onkeydown={(e) => e.key === 'Enter' && onClick()}
   >
@@ -111,6 +121,12 @@
           {#if pod.usageCpu}
             <div class="pr-bar-seg use" style="width:{pct(pod.usageCpu, nodeCapacity)}%"></div>
           {/if}
+          {#if pod.requestCpu}
+            <div class="pr-bar-marker req" style="left:{pct(pod.requestCpu, nodeCapacity)}%"></div>
+          {/if}
+          {#if pod.limitCpu}
+            <div class="pr-bar-marker lim" style="left:{pct(pod.limitCpu, nodeCapacity)}%"></div>
+          {/if}
         </div>
         <span class="pr-bar-val">{formatCpu(pod.usageCpu)} / {formatCpu(pod.requestCpu)}</span>
       </div>
@@ -123,6 +139,12 @@
           {#if pod.usageMemory}
             <div class="pr-bar-seg use" style="width:{pct(pod.usageMemory, nodeCapacity)}%"></div>
           {/if}
+          {#if pod.requestMemory}
+            <div class="pr-bar-marker req" style="left:{pct(pod.requestMemory, nodeCapacity)}%"></div>
+          {/if}
+          {#if pod.limitMemory}
+            <div class="pr-bar-marker lim" style="left:{pct(pod.limitMemory, nodeCapacity)}%"></div>
+          {/if}
         </div>
         <span class="pr-bar-val">{formatMemory(pod.usageMemory)} / {formatMemory(pod.requestMemory)}</span>
       </div>
@@ -130,9 +152,7 @@
   </div>
 {/if}
 
-{#if hovered}
-  <PodTooltip {pod} x={mouseX} y={mouseY} />
-{/if}
+
 
 <style>
 /* ── Default block ───────────────────────────────────────────────── */
@@ -154,7 +174,7 @@
   grid-template-columns: 10px 1fr auto auto auto 200px;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.4rem 0.6rem;
+  padding: 0.25rem 0.5rem;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
@@ -198,6 +218,17 @@
 .pr-bar-seg { position: absolute; top: 0; left: 0; height: 100%; border-radius: 999px; }
 .pr-bar-seg.req { background: var(--gauge-request); opacity: 0.5; }
 .pr-bar-seg.use { background: var(--gauge-usage); }
+.pr-bar-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.5px;
+  z-index: 10;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.pr-bar-marker.req { background: var(--gauge-request); }
+.pr-bar-marker.lim { background: var(--gauge-limit); }
 .pr-bar-val {
   font-family: var(--font-mono);
   font-size: 0.6rem;
