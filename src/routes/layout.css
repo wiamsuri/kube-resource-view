@@ -1,2 +1,172 @@
+/* ── Google Fonts ──────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+
+/* ── Design Tokens ─────────────────────────────────────────────────────── */
+:root {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Light theme */
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --border: rgba(0, 0, 0, 0.08);
+  --text-primary: #0f172a;
+  --text-muted: #64748b;
+  --accent: #6366f1;
+  --accent-glow: rgba(99, 102, 241, 0.15);
+
+  /* Gauge colors */
+  --gauge-request: #6366f1;
+  /* indigo */
+  --gauge-limit: #f59e0b;
+  /* amber  */
+  --gauge-usage: #10b981;
+  /* emerald */
+  --gauge-over: #f43f5e;
+  /* rose (over capacity) */
+
+  /* Pod status */
+  --pod-running: #10b981;
+  --pod-initializing: #06b6d4;
+  --pod-pending: #f59e0b;
+  --pod-terminating: #f97316;
+  --pod-error: #f43f5e;
+  --pod-succeeded: #64748b;
+  --pod-unknown: #94a3b8;
+}
+
+.dark {
+  --bg-base: #09090b;
+  --bg-surface: #18181b;
+  --bg-elevated: #27272a;
+  --bg-glass: rgba(24, 24, 27, 0.75);
+  --border: rgba(255, 255, 255, 0.08);
+  --text-primary: #f4f4f5;
+  --text-muted: #71717a;
+  --accent: #818cf8;
+  --accent-glow: rgba(129, 140, 248, 0.15);
+}
+
+/* ── Base ──────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  transition: background 0.2s, color 0.2s;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Custom scrollbar ──────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ── Glassmorphism utility ─────────────────────────────────────────────── */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--border);
+}
+
+/* ── Pod status dot colours ────────────────────────────────────────────── */
+.pod-running {
+  background: var(--pod-running);
+}
+
+.pod-initializing {
+  background: var(--pod-initializing);
+}
+
+.pod-pending {
+  background: var(--pod-pending);
+}
+
+.pod-terminating {
+  background: var(--pod-terminating);
+}
+
+.pod-error {
+  background: var(--pod-error);
+}
+
+.pod-succeeded {
+  background: var(--pod-succeeded);
+}
+
+.pod-unknown {
+  background: var(--pod-unknown);
+}
+
+/* ── Pulse animation for pending/initializing pods ─────────────────────── */
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+
+  70% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.pod-pending,
+.pod-initializing {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+/* ── Fade-in animation ─────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fade-in {
+  animation: fade-in 0.25s ease-out both;
+}
+
+/* ── Highlighted pod ring ──────────────────────────────────────────────── */
+.pod-highlighted {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  z-index: 10;
+}

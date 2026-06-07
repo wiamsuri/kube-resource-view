@@ -1,0 +1,112 @@
+---
+# ── ServiceAccount ────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kube-resource-view-sa
+  namespace: default
+  labels:
+    app: kube-resource-view
+
+---
+# ── ClusterRole ───────────────────────────────────────────────────────────────
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kube-resource-view-role
+  labels:
+    app: kube-resource-view
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+
+---
+# ── ClusterRoleBinding ────────────────────────────────────────────────────────
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kube-resource-view-binding
+  labels:
+    app: kube-resource-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kube-resource-view-role
+subjects:
+  - kind: ServiceAccount
+    name: kube-resource-view-sa
+    namespace: default
+
+---
+# ── Deployment ────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kube-resource-view
+  namespace: default
+  labels:
+    app: kube-resource-view
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kube-resource-view
+  template:
+    metadata:
+      labels:
+        app: kube-resource-view
+    spec:
+      serviceAccountName: kube-resource-view-sa
+      containers:
+        - name: kube-resource-view
+          image: kube-resource-view:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 30
+
+---
+# ── Service ───────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-resource-view
+  namespace: default
+  labels:
+    app: kube-resource-view
+spec:
+  selector:
+    app: kube-resource-view
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+      name: http

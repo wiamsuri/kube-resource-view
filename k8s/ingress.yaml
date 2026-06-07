@@ -1,0 +1,27 @@
+---
+# Optional: Ingress for HTTP routing
+# Adjust host and ingressClassName to match your cluster setup
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kube-resource-view
+  namespace: default
+  labels:
+    app: kube-resource-view
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"   # keep SSE alive
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"       # disable buffering for SSE
+spec:
+  ingressClassName: nginx   # change to traefik, haproxy, etc. as needed
+  rules:
+    - host: kube-resource-view.local   # change to your hostname
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-resource-view
+                port:
+                  number: 80
