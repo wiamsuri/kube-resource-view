@@ -1,6 +1,5 @@
 <script lang="ts">
   import './layout.css';
-  import favicon from '$lib/assets/favicon.svg';
   import { onMount } from 'svelte';
 
   let { children } = $props();
@@ -15,7 +14,7 @@
 </script>
 
 <svelte:head>
-  <link rel="icon" href={favicon} />
+  <link rel="icon" href="/favicon.ico" />
   <title>Kube Resource View</title>
   <meta name="description" content="Real-time Kubernetes resource visualization — CPU, memory usage, requests, and limits across all nodes and pods." />
 </svelte:head>
