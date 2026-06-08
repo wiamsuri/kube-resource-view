@@ -65,4 +65,4 @@ If you prefer to run it locally on your machine (using your current active `kube
 
 ## License
 
-This project is licensed under the [MIT License](file:///Users/wattiamsuri/Projects/kube-resource-view/LICENSE).
+This project is licensed under the MIT License
