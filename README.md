@@ -60,3 +60,9 @@ If you prefer to run it locally on your machine (using your current active `kube
    npm run dev
    ```
    Open `http://localhost:5173` to see your active cluster immediately.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](file:///Users/wattiamsuri/Projects/kube-resource-view/LICENSE).
