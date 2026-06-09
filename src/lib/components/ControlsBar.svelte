@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SizingMetric, ViewMode } from '$lib/types.js';
+  import type { SizingMetric, ViewMode, NodeSortOrder } from '$lib/types.js';
   import { getAllNamespaces } from '$lib/k8sStore.svelte.js';
 
   interface Props {
@@ -9,17 +9,19 @@
     sizingMetric: SizingMetric;
     viewMode: ViewMode;
     darkMode: boolean;
+    sortBy: NodeSortOrder;
     onSearch: (v: string) => void;
     onNamespaces: (v: string[]) => void;
     onStatusFilters: (v: string[]) => void;
     onSizingMetric: (v: SizingMetric) => void;
     onViewMode: (v: ViewMode) => void;
     onToggleDark: () => void;
+    onSortBy: (v: NodeSortOrder) => void;
   }
 
   let {
-    search, namespaces, statusFilters, sizingMetric, viewMode, darkMode,
-    onSearch, onNamespaces, onStatusFilters, onSizingMetric, onViewMode, onToggleDark,
+    search, namespaces, statusFilters, sizingMetric, viewMode, darkMode, sortBy,
+    onSearch, onNamespaces, onStatusFilters, onSizingMetric, onViewMode, onToggleDark, onSortBy,
   }: Props = $props();
 
   const ALL_STATUSES = ['Running', 'Pending', 'Failed', 'Succeeded', 'Terminating'];
@@ -31,6 +33,12 @@
     { value: 'memRequest', label: 'Mem Req' },
     { value: 'memLimit',   label: 'Mem Lim' },
     { value: 'memUsage',   label: 'Mem Use' },
+  ];
+
+  const SORT_OPTIONS: { value: NodeSortOrder; label: string }[] = [
+    { value: 'name',        label: 'Sort: Name' },
+    { value: 'age-oldest',  label: 'Sort: Age (Oldest)' },
+    { value: 'age-newest',  label: 'Sort: Age (Newest)' },
   ];
 
   let nsOpen = $state(false);
@@ -137,6 +145,21 @@
     title="Pod size metric"
   >
     {#each SIZING_OPTIONS as opt}
+      <option value={opt.value}>{opt.label}</option>
+    {/each}
+  </select>
+
+  <div class="controls-divider"></div>
+
+  <!-- Node sort -->
+  <select
+    id="node-sort-select"
+    class="select-native"
+    value={sortBy}
+    onchange={(e) => onSortBy((e.target as HTMLSelectElement).value as NodeSortOrder)}
+    title="Node sort order"
+  >
+    {#each SORT_OPTIONS as opt}
       <option value={opt.value}>{opt.label}</option>
     {/each}
   </select>

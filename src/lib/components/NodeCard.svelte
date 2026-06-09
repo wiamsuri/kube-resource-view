@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { NodeInfo, PodInfo } from '$lib/types.js';
   import type { SizingMetric, ViewMode } from '$lib/types.js';
-  import { formatCpu, formatMemory } from '$lib/utils.js';
+  import { formatCpu, formatMemory, formatAge } from '$lib/utils.js';
   import ResourceGauge from './ResourceGauge.svelte';
   import PodBlock from './PodBlock.svelte';
 
@@ -49,6 +49,9 @@
         <span class="instance-badge">{node.instanceType}</span>
       {/if}
       <span class="zone-badge" title="Provider/Zone">{node.providerZone}</span>
+      {#if node.createdAt}
+        <span class="age-badge" title="Age: {new Date(node.createdAt).toLocaleString()}">{formatAge(node.createdAt)}</span>
+      {/if}
     </div>
   </header>
 
@@ -188,7 +191,7 @@
   flex-wrap: wrap;
   gap: 0.3rem;
 }
-.role-badge, .instance-badge, .zone-badge {
+.role-badge, .instance-badge, .zone-badge, .age-badge {
   font-size: 0.6rem;
   font-weight: 600;
   padding: 0.1rem 0.45rem;
@@ -198,6 +201,7 @@
 .role-badge     { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
 .instance-badge { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
 .zone-badge     { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
+.age-badge      { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
 
 /* Capacity */
 .node-capacity {

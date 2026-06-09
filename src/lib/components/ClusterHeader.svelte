@@ -1,6 +1,7 @@
 <script lang="ts">
   import { formatCpu, formatMemory } from '$lib/utils.js';
   import { getClusterTotals, nodes, pods } from '$lib/k8sStore.svelte.js';
+  import logoSmall from '$lib/assets/logo-small.png';
 
   const totals = $derived(getClusterTotals());
   const nodeCount = $derived(nodes.size);
@@ -15,7 +16,7 @@
 <header class="cluster-header glass">
   <div class="header-left">
     <div class="logo-mark">
-      <img src="/logo-small.png" alt="Kube Resource View Logo" class="logo-img" />
+      <img src={logoSmall} alt="Kube Resource View Logo" class="logo-img" />
     </div>
     <h1 class="site-title">kube<span class="accent">-resource-view</span></h1>
   </div>

@@ -1,20 +1,28 @@
 <script lang="ts">
-  import type { PageData } from './$types.js';
-  import type { SizingMetric, ViewMode, PodInfo } from '$lib/types.js';
-  import { onMount } from 'svelte';
+  import type { PageData } from "./$types.js";
+  import type {
+    SizingMetric,
+    ViewMode,
+    PodInfo,
+    NodeSortOrder,
+  } from "$lib/types.js";
+  import { onMount } from "svelte";
 
   import {
-    nodes, pods, metrics,
+    nodes,
+    pods,
+    metrics,
     getAllNamespaces,
-    applyInitialData, applySSEEvent,
+    applyInitialData,
+    applySSEEvent,
     tooltipStore,
-  } from '$lib/k8sStore.svelte.js';
+  } from "$lib/k8sStore.svelte.js";
 
-  import ClusterHeader            from '$lib/components/ClusterHeader.svelte';
-  import ControlsBar              from '$lib/components/ControlsBar.svelte';
-  import NodeCard                 from '$lib/components/NodeCard.svelte';
-  import MetricsUnavailableBanner from '$lib/components/MetricsUnavailableBanner.svelte';
-  import PodTooltip               from '$lib/components/PodTooltip.svelte';
+  import ClusterHeader from "$lib/components/ClusterHeader.svelte";
+  import ControlsBar from "$lib/components/ControlsBar.svelte";
+  import NodeCard from "$lib/components/NodeCard.svelte";
+  import MetricsUnavailableBanner from "$lib/components/MetricsUnavailableBanner.svelte";
+  import PodTooltip from "$lib/components/PodTooltip.svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -25,28 +33,29 @@
   });
 
   // ── UI state ───────────────────────────────────────────────────────────
-  let search         = $state('');
-  let namespaces     = $state<string[]>([]);
-  let statusFilters  = $state<string[]>([]);
-  let sizingMetric   = $state<SizingMetric>('uniform');
-  let viewMode       = $state<ViewMode>('default');
-  let darkMode       = $state(false);
-  let highlightKey   = $state<string | null>(null);
+  let search = $state("");
+  let namespaces = $state<string[]>([]);
+  let statusFilters = $state<string[]>([]);
+  let sizingMetric = $state<SizingMetric>("uniform");
+  let viewMode = $state<ViewMode>("default");
+  let darkMode = $state(false);
+  let highlightKey = $state<string | null>(null);
   let bannerDismissed = $state(false);
+  let sortBy = $state<NodeSortOrder>("age-oldest");
 
   // Detect initial dark mode from the class applied by layout
   $effect(() => {
-    darkMode = document.documentElement.classList.contains('dark');
+    darkMode = document.documentElement.classList.contains("dark");
   });
 
   function toggleDark() {
     darkMode = !darkMode;
     if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
   }
 
@@ -77,16 +86,26 @@
             (p) =>
               p.name.toLowerCase().includes(q) ||
               p.namespace.toLowerCase().includes(q) ||
-              p.ownerName.toLowerCase().includes(q)
+              p.ownerName.toLowerCase().includes(q),
           );
           if (!podMatch) return false;
         }
         return true;
       })
       .sort((a, b) => {
-        const aCP = a.roles.includes('control-plane') || a.roles.includes('master');
-        const bCP = b.roles.includes('control-plane') || b.roles.includes('master');
+        const aCP =
+          a.roles.includes("control-plane") || a.roles.includes("master");
+        const bCP =
+          b.roles.includes("control-plane") || b.roles.includes("master");
         if (aCP !== bCP) return aCP ? -1 : 1;
+
+        if (sortBy === "age-oldest" || sortBy === "age-newest") {
+          const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          if (aTime !== bTime) {
+            return sortBy === "age-oldest" ? aTime - bTime : bTime - aTime;
+          }
+        }
         return a.name.localeCompare(b.name);
       })
       .map((node) => {
@@ -109,28 +128,33 @@
 
   // ── SSE stream ─────────────────────────────────────────────────────────
   let sse: EventSource | null = null;
-  let sseStatus = $state<'connecting' | 'connected' | 'error'>('connecting');
+  let sseStatus = $state<"connecting" | "connected" | "error">("connecting");
   let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function connectSSE() {
-    if (sse) { sse.close(); sse = null; }
+    if (sse) {
+      sse.close();
+      sse = null;
+    }
 
-    sseStatus = 'connecting';
-    sse = new EventSource('/api/k8s/stream');
+    sseStatus = "connecting";
+    sse = new EventSource("/api/k8s/stream");
 
-    sse.onopen = () => { sseStatus = 'connected'; };
+    sse.onopen = () => {
+      sseStatus = "connected";
+    };
 
     sse.onmessage = (e) => {
       try {
         const event = JSON.parse(e.data);
-        if (event.type !== 'HEARTBEAT') applySSEEvent(event);
+        if (event.type !== "HEARTBEAT") applySSEEvent(event);
       } catch (err) {
-        console.error('SSE parse error', err);
+        console.error("SSE parse error", err);
       }
     };
 
     sse.onerror = () => {
-      sseStatus = 'error';
+      sseStatus = "error";
       sse?.close();
       sse = null;
       // Reconnect after 3s
@@ -160,13 +184,17 @@
   {/if}
 
   <!-- SSE status indicator -->
-  <div class="sse-indicator" class:error={sseStatus === 'error'} class:connecting={sseStatus === 'connecting'}>
+  <div
+    class="sse-indicator"
+    class:error={sseStatus === "error"}
+    class:connecting={sseStatus === "connecting"}
+  >
     <span class="sse-dot"></span>
-    {#if sseStatus === 'connected'}Live{:else if sseStatus === 'connecting'}Connecting…{:else}Reconnecting…{/if}
+    {#if sseStatus === "connected"}Live{:else if sseStatus === "connecting"}Connecting…{:else}Reconnecting…{/if}
   </div>
 
   <!-- Node grid -->
-  <main class="node-grid" class:detail-mode={viewMode === 'detail'}>
+  <main class="node-grid" class:detail-mode={viewMode === "detail"}>
     {#each filteredNodeCards as { node, pods: nodePods } (node.name)}
       <NodeCard
         {node}
@@ -183,7 +211,8 @@
         <div class="empty-icon">⬡</div>
         <div class="empty-title">No nodes found</div>
         <div class="empty-sub">
-          {#if search}Try a different search term.{:else}Waiting for cluster data…{/if}
+          {#if search}Try a different search term.{:else}Waiting for cluster
+            data…{/if}
         </div>
       </div>
     {/if}
@@ -197,12 +226,14 @@
     {sizingMetric}
     {viewMode}
     {darkMode}
+    {sortBy}
     onSearch={(v) => (search = v)}
     onNamespaces={(v) => (namespaces = v)}
     onStatusFilters={(v) => (statusFilters = v)}
     onSizingMetric={(v) => (sizingMetric = v)}
     onViewMode={(v) => (viewMode = v)}
     onToggleDark={toggleDark}
+    onSortBy={(v) => (sortBy = v)}
   />
 
   {#if tooltipStore.active}
@@ -215,72 +246,85 @@
 </div>
 
 <style>
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
+  .app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
 
-/* SSE indicator */
-.sse-indicator {
-  position: fixed;
-  top: 56px;
-  right: 1rem;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--pod-running);
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  pointer-events: none;
-  opacity: 0.85;
-}
-.sse-indicator.connecting { color: var(--pod-pending); }
-.sse-indicator.error      { color: var(--pod-error); }
+  /* SSE indicator */
+  .sse-indicator {
+    position: fixed;
+    top: 56px;
+    right: 1rem;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--pod-running);
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .sse-indicator.connecting {
+    color: var(--pod-pending);
+  }
+  .sse-indicator.error {
+    color: var(--pod-error);
+  }
 
-.sse-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  animation: pulse-ring 2s ease-out infinite;
-}
+  .sse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse-ring 2s ease-out infinite;
+  }
 
-/* Node grid */
-.node-grid {
-  flex: 1;
-  padding: 1.25rem 1.5rem 5.5rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1rem;
-  align-content: start;
-}
+  /* Node grid */
+  .node-grid {
+    flex: 1;
+    padding: 1.25rem 1.5rem 5.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    align-content: start;
+  }
 
-.node-grid.detail-mode {
-  grid-template-columns: 1fr;
-  max-width: 1100px;
-  margin: 0 auto;
-  width: 100%;
-}
+  .node-grid.detail-mode {
+    grid-template-columns: 1fr;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
 
-/* Empty state */
-.empty-state {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 4rem 2rem;
-  color: var(--text-muted);
-}
-.empty-icon  { font-size: 3rem; opacity: 0.3; }
-.empty-title { font-size: 1rem; font-weight: 600; }
-.empty-sub   { font-size: 0.8rem; }
+  /* Empty state */
+  .empty-state {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 4rem 2rem;
+    color: var(--text-muted);
+  }
+  .empty-icon {
+    font-size: 3rem;
+    opacity: 0.3;
+  }
+  .empty-title {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .empty-sub {
+    font-size: 0.8rem;
+  }
 </style>

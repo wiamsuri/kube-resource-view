@@ -102,3 +102,6 @@ export type SizingMetric =
   | 'memRequest' | 'memLimit' | 'memUsage';
 
 export type ViewMode = 'default' | 'detail';
+
+export type NodeSortOrder = 'name' | 'age-oldest' | 'age-newest';
+
