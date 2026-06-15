@@ -5,6 +5,12 @@ export interface NodeCapacity {
   memoryBytes: number; // allocatable memory in bytes
 }
 
+export interface TaintInfo {
+  key: string;
+  value?: string;
+  effect: string;
+}
+
 export interface NodeInfo {
   name: string;
   roles: string[];
@@ -23,6 +29,7 @@ export interface NodeInfo {
   ready: boolean;
   podCidr?: string;
   createdAt: string;
+  taints?: TaintInfo[];
 }
 
 // ─── Pod ───────────────────────────────────────────────────────────────────

@@ -47,6 +47,12 @@ export function nodeFromK8s(node: k8s.V1Node): NodeInfo {
   const readyCondition = status.conditions?.find((c) => c.type === 'Ready');
   const ready = readyCondition?.status === 'True';
 
+  const taints = (spec.taints ?? []).map((t) => ({
+    key: t.key,
+    value: t.value,
+    effect: t.effect,
+  }));
+
   return {
     name: meta.name!,
     roles,
@@ -63,6 +69,7 @@ export function nodeFromK8s(node: k8s.V1Node): NodeInfo {
     ready,
     podCidr: spec.podCIDR,
     createdAt: meta.creationTimestamp ? new Date(meta.creationTimestamp).toISOString() : new Date().toISOString(),
+    taints,
   };
 }
 
