@@ -38,8 +38,13 @@
   <!-- ── Header ──────────────────────────────────────────────── -->
   <header class="node-header">
     <div class="node-title-wrap">
-      <div class="node-ready-dot" class:ready={node.ready}></div>
-      <h2 class="node-name" title={node.name}>{node.name}</h2>
+      <div class="node-title-left">
+        <div class="node-ready-dot" class:ready={node.ready}></div>
+        <h2 class="node-name" title={node.name}>{node.name}</h2>
+      </div>
+      {#if node.createdAt}
+        <span class="node-age" title="Age: {new Date(node.createdAt).toLocaleString()}">{formatAge(node.createdAt)}</span>
+      {/if}
     </div>
     <div class="node-meta">
       {#each node.roles as role}
@@ -49,9 +54,6 @@
         <span class="instance-badge">{node.instanceType}</span>
       {/if}
       <span class="zone-badge" title="Provider/Zone">{node.providerZone}</span>
-      {#if node.createdAt}
-        <span class="age-badge" title="Age: {new Date(node.createdAt).toLocaleString()}">{formatAge(node.createdAt)}</span>
-      {/if}
     </div>
   </header>
 
@@ -165,8 +167,16 @@
 }
 .node-title-wrap {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 0.5rem;
+}
+.node-title-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  overflow: hidden;
+  min-width: 0;
 }
 .node-ready-dot {
   width: 8px; height: 8px;
@@ -191,7 +201,7 @@
   flex-wrap: wrap;
   gap: 0.3rem;
 }
-.role-badge, .instance-badge, .zone-badge, .age-badge {
+.role-badge, .instance-badge, .zone-badge {
   font-size: 0.6rem;
   font-weight: 600;
   padding: 0.1rem 0.45rem;
@@ -201,7 +211,14 @@
 .role-badge     { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
 .instance-badge { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
 .zone-badge     { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
-.age-badge      { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
+
+.node-age {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 
 /* Capacity */
 .node-capacity {

@@ -61,6 +61,7 @@ function recomputeNodeAggregates(nodeName: string) {
   let rc = 0, rm = 0, lc = 0, lm = 0;
   for (const pod of pods.values()) {
     if (pod.nodeName !== nodeName) continue;
+    if (pod.phase === 'Succeeded' || pod.phase === 'Failed') continue;
     rc += pod.requestCpu;
     rm += pod.requestMemory;
     lc += pod.limitCpu;
@@ -137,8 +138,9 @@ export function applySSEEvent(event: SSEEvent) {
 
     // ── Metrics ────────────────────────────────────────────────────────────
     case 'NODE_METRICS': {
-      const metrics = event.data as NodeMetricsPayload[];
-      for (const m of metrics) {
+      metrics.available = true;
+      const metricsData = event.data as NodeMetricsPayload[];
+      for (const m of metricsData) {
         const node = nodes.get(m.name);
         if (node) {
           node.usageCpu = m.cpuMillicores;
@@ -149,8 +151,9 @@ export function applySSEEvent(event: SSEEvent) {
       break;
     }
     case 'POD_METRICS': {
-      const metrics = event.data as PodMetricsPayload[];
-      const byKey = new Map(metrics.map((m) => [`${m.namespace}/${m.name}`, m]));
+      metrics.available = true;
+      const metricsData = event.data as PodMetricsPayload[];
+      const byKey = new Map(metricsData.map((m) => [`${m.namespace}/${m.name}`, m]));
       for (const pod of pods.values()) {
         const m = byKey.get(`${pod.namespace}/${pod.name}`);
         if (m) {

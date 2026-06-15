@@ -80,6 +80,7 @@ export const load: PageServerLoad = async () => {
   const nodeAgg = new Map<string, { rc: number; rm: number; lc: number; lm: number }>();
   for (const pod of pods) {
     if (!pod || !pod.nodeName) continue;
+    if (pod.phase === 'Succeeded' || pod.phase === 'Failed') continue;
     const agg = nodeAgg.get(pod.nodeName) ?? { rc: 0, rm: 0, lc: 0, lm: 0 };
     agg.rc += pod.requestCpu;
     agg.rm += pod.requestMemory;
