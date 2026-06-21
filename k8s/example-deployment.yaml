@@ -62,7 +62,7 @@ spec:
       serviceAccountName: kube-resource-view-sa
       containers:
         - name: kube-resource-view
-          image: wiamsuri/kube-resource-view:0.2.0
+          image: wiamsuri/kube-resource-view:0.3.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
