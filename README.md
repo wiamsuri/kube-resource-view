@@ -46,6 +46,18 @@ Once applied, this creates:
 
 ---
 
+## Docker Hub
+
+Pre-built container images are available on Docker Hub:
+
+👉 [**wiamsuri/kube-resource-view**](https://hub.docker.com/r/wiamsuri/kube-resource-view)
+
+```bash
+docker pull wiamsuri/kube-resource-view:latest
+```
+
+---
+
 ## Local Testing (Running via Kubeconfig)
 
 If you prefer to run it locally on your machine (using your current active `kubectl` context) without deploying it to the cluster:
