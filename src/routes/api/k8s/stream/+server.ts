@@ -84,9 +84,10 @@ export const GET: RequestHandler = ({ request }) => {
       });
       podInformer.on('delete', (obj) => {
         if (closed) return;
-        console.log('[stream] Pod DELETED:', obj.metadata?.namespace, obj.metadata?.name);
-        const pod = podFromK8s(obj);
-        if (pod) send({ type: 'DELETE_POD', data: { name: pod.name } });
+        const rawPod = (obj as any)?.obj ?? obj;
+        const pod = podFromK8s(rawPod);
+        console.log('[stream] Pod DELETED:', rawPod.metadata?.namespace, rawPod.metadata?.name);
+        if (pod) send({ type: 'DELETE_POD', data: { uid: pod.uid, name: pod.name, namespace: pod.namespace } });
       });
       podInformer.on('error', (err: any) => {
         if (!closed) console.error('[stream] Pod informer error:', err?.message ?? err);

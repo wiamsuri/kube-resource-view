@@ -23,6 +23,7 @@
   import NodeCard from "$lib/components/NodeCard.svelte";
   import MetricsUnavailableBanner from "$lib/components/MetricsUnavailableBanner.svelte";
   import PodTooltip from "$lib/components/PodTooltip.svelte";
+  import UnassignedPodsWidget from "$lib/components/UnassignedPodsWidget.svelte";
 
   let { data }: { data: PageData } = $props();
 
@@ -126,6 +127,28 @@
       });
   });
 
+  // ── Derived: unassigned pending pods (no nodeName) ─────────────────────
+  const unassignedPods = $derived.by(() => {
+    const q = search.toLowerCase().trim();
+    const ns = namespaces;
+    const sf = statusFilters;
+
+    return [...pods.values()]
+      .filter((p) => !p.nodeName)
+      .filter((p) => {
+        if (ns.length > 0 && !ns.includes(p.namespace)) return false;
+        if (sf.length > 0 && !sf.includes(p.phase)) return false;
+        if (q) {
+          return (
+            p.name.toLowerCase().includes(q) ||
+            p.namespace.toLowerCase().includes(q) ||
+            p.ownerName.toLowerCase().includes(q)
+          );
+        }
+        return true;
+      });
+  });
+
   // ── SSE stream ─────────────────────────────────────────────────────────
   let sse: EventSource | null = null;
   let sseStatus = $state<"connecting" | "connected" | "error">("connecting");
@@ -217,6 +240,15 @@
       </div>
     {/if}
   </main>
+
+  <!-- Floating unassigned / pending pods widget -->
+  <UnassignedPodsWidget
+    pods={unassignedPods}
+    {sizingMetric}
+    {viewMode}
+    {highlightKey}
+    onHighlight={(k) => (highlightKey = k)}
+  />
 
   <!-- Controls (sticky bottom) -->
   <ControlsBar

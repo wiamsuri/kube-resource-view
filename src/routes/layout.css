@@ -128,23 +128,18 @@ body {
 }
 
 /* ── Pulse animation for pending/initializing pods ─────────────────────── */
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 currentColor;
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
   }
-
-  70% {
-    box-shadow: 0 0 0 4px transparent;
-  }
-
-  100% {
-    box-shadow: 0 0 0 0 transparent;
+  50% {
+    opacity: 0.45;
   }
 }
 
 .pod-pending,
 .pod-initializing {
-  animation: pulse-ring 2s ease-out infinite;
+  animation: pulse-soft 1.8s ease-in-out infinite;
 }
 
 /* ── Fade-in animation ─────────────────────────────────────────────────── */

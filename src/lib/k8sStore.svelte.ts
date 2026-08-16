@@ -124,13 +124,19 @@ export function applySSEEvent(event: SSEEvent) {
       break;
     }
     case 'DELETE_POD': {
-      const { name } = event.data as { name: string };
-      // Find by name (uid might not be in the DELETE event)
-      for (const [uid, pod] of pods.entries()) {
-        if (pod.name === name) {
-          pods.delete(uid);
-          recomputeNodeAggregates(pod.nodeName);
-          break;
+      const { uid, name, namespace } = event.data as { uid?: string; name: string; namespace?: string };
+      if (uid && pods.has(uid)) {
+        const pod = pods.get(uid);
+        pods.delete(uid);
+        if (pod?.nodeName) recomputeNodeAggregates(pod.nodeName);
+      } else {
+        // Fallback search by name and namespace if uid isn't provided
+        for (const [id, pod] of pods.entries()) {
+          if (pod.name === name && (!namespace || pod.namespace === namespace)) {
+            pods.delete(id);
+            if (pod.nodeName) recomputeNodeAggregates(pod.nodeName);
+            break;
+          }
         }
       }
       break;

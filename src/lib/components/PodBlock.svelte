@@ -159,7 +159,7 @@
 .pod-block {
   border-radius: 3px;
   cursor: pointer;
-  transition: transform 0.15s, opacity 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s ease, opacity 0.15s ease;
   flex-shrink: 0;
 }
 .pod-block:hover {
