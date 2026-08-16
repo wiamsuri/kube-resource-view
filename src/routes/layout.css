@@ -68,6 +68,7 @@ body {
   color: var(--text-primary);
   transition: background 0.2s, color 0.2s;
   min-height: 100vh;
+  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 

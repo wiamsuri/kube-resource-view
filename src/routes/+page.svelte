@@ -199,22 +199,12 @@
 </svelte:head>
 
 <div class="app-shell">
-  <ClusterHeader />
+  <ClusterHeader {sseStatus} />
 
   <!-- Metrics unavailable banner -->
   {#if metrics.available === false && !bannerDismissed}
     <MetricsUnavailableBanner ondismiss={() => (bannerDismissed = true)} />
   {/if}
-
-  <!-- SSE status indicator -->
-  <div
-    class="sse-indicator"
-    class:error={sseStatus === "error"}
-    class:connecting={sseStatus === "connecting"}
-  >
-    <span class="sse-dot"></span>
-    {#if sseStatus === "connected"}Live{:else if sseStatus === "connecting"}Connecting…{:else}Reconnecting…{/if}
-  </div>
 
   <!-- Node grid -->
   <main class="node-grid" class:detail-mode={viewMode === "detail"}>
@@ -283,41 +273,6 @@
     display: flex;
     flex-direction: column;
     position: relative;
-  }
-
-  /* SSE indicator */
-  .sse-indicator {
-    position: fixed;
-    top: 56px;
-    right: 1rem;
-    z-index: 60;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: var(--pod-running);
-    letter-spacing: 0.04em;
-    padding: 0.2rem 0.6rem;
-    border-radius: 999px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    pointer-events: none;
-    opacity: 0.85;
-  }
-  .sse-indicator.connecting {
-    color: var(--pod-pending);
-  }
-  .sse-indicator.error {
-    color: var(--pod-error);
-  }
-
-  .sse-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-    animation: pulse-ring 2s ease-out infinite;
   }
 
   /* Node grid */

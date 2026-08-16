@@ -185,4 +185,9 @@
   flex-direction: column;
   gap: 3px;
 }
+
+/* Prevent hover scale from clipping against the glass container's border-radius */
+.pod-container :global(.pod-block:hover) {
+  transform: none;
+}
 </style>

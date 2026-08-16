@@ -1,9 +1,10 @@
 <script lang="ts">
-  import type { NodeInfo, PodInfo } from '$lib/types.js';
-  import type { SizingMetric, ViewMode } from '$lib/types.js';
-  import { formatCpu, formatMemory, formatAge } from '$lib/utils.js';
-  import ResourceGauge from './ResourceGauge.svelte';
-  import PodBlock from './PodBlock.svelte';
+  import type { NodeInfo, PodInfo } from "$lib/types.js";
+  import type { SizingMetric, ViewMode } from "$lib/types.js";
+  import { formatCpu, formatMemory, formatAge } from "$lib/utils.js";
+  import { onDestroy } from "svelte";
+  import ResourceGauge from "./ResourceGauge.svelte";
+  import PodBlock from "./PodBlock.svelte";
 
   interface Props {
     node: NodeInfo;
@@ -14,24 +15,51 @@
     onHighlight: (key: string | null) => void;
   }
 
-  let { node, pods, sizingMetric, viewMode, highlightKey, onHighlight }: Props = $props();
+  let { node, pods, sizingMetric, viewMode, highlightKey, onHighlight }: Props =
+    $props();
 
-  const readyCount = $derived(pods.filter(p => p.ready).length);
+  let copied = $state(false);
+  let copyTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  async function copyNodeName() {
+    try {
+      await navigator.clipboard.writeText(node.name);
+      copied = true;
+      if (copyTimeout) clearTimeout(copyTimeout);
+      copyTimeout = setTimeout(() => {
+        copied = false;
+      }, 1800);
+    } catch (err) {
+      console.error("Failed to copy node name", err);
+    }
+  }
+
+  onDestroy(() => {
+    if (copyTimeout) clearTimeout(copyTimeout);
+  });
+
+  const readyCount = $derived(pods.filter((p) => p.ready).length);
 
   // Use allocatable as the sizing reference
   const cpuCap = $derived(node.allocatable.cpuMillicores);
   const memCap = $derived(node.allocatable.memoryBytes);
 
   // Sorted: errors first, then pending, then running. Secondary: alphabetically by name.
-  const sortedPods = $derived([...pods].sort((a, b) => {
-    const order: Record<string, number> = {
-      Failed: 0, Unknown: 1, Terminating: 2, Pending: 3,
-      Running: 4, Succeeded: 5,
-    };
-    const phaseDiff = (order[a.phase] ?? 4) - (order[b.phase] ?? 4);
-    if (phaseDiff !== 0) return phaseDiff;
-    return a.name.localeCompare(b.name);
-  }));
+  const sortedPods = $derived(
+    [...pods].sort((a, b) => {
+      const order: Record<string, number> = {
+        Failed: 0,
+        Unknown: 1,
+        Terminating: 2,
+        Pending: 3,
+        Running: 4,
+        Succeeded: 5,
+      };
+      const phaseDiff = (order[a.phase] ?? 4) - (order[b.phase] ?? 4);
+      if (phaseDiff !== 0) return phaseDiff;
+      return a.name.localeCompare(b.name);
+    }),
+  );
 </script>
 
 <article class="node-card glass fade-in" class:not-ready={!node.ready}>
@@ -40,10 +68,24 @@
     <div class="node-title-wrap">
       <div class="node-title-left">
         <div class="node-ready-dot" class:ready={node.ready}></div>
-        <h2 class="node-name" title={node.name}>{node.name}</h2>
+        <button
+          type="button"
+          class="node-name-btn"
+          onclick={copyNodeName}
+          title="Click to copy {node.name}"
+        >
+          <h2 class="node-name">{node.name}</h2>
+          {#if copied}
+            <span class="copied-badge fade-in">Copied!</span>
+          {/if}
+        </button>
       </div>
       {#if node.createdAt}
-        <span class="node-age" title="Age: {new Date(node.createdAt).toLocaleString()}">{formatAge(node.createdAt)}</span>
+        <span
+          class="node-age"
+          title="Age: {new Date(node.createdAt).toLocaleString()}"
+          >{formatAge(node.createdAt)}</span
+        >
       {/if}
     </div>
     <div class="node-meta">
@@ -56,7 +98,8 @@
       <span class="zone-badge" title="Provider/Zone">{node.providerZone}</span>
       {#if node.taints && node.taints.length > 0}
         <button type="button" class="taints-badge-trigger">
-          {node.taints.length} {node.taints.length === 1 ? 'taint' : 'taints'}
+          {node.taints.length}
+          {node.taints.length === 1 ? "taint" : "taints"}
           <span class="taints-tooltip glass">
             <span class="taints-tooltip-header">Node Taints</span>
             <span class="taints-list">
@@ -68,7 +111,9 @@
                     <span class="taint-val">{taint.value}</span>
                   {/if}
                   <span class="taint-sep">:</span>
-                  <span class="taint-effect {taint.effect.toLowerCase()}">{taint.effect}</span>
+                  <span class="taint-effect {taint.effect.toLowerCase()}"
+                    >{taint.effect}</span
+                  >
                 </span>
               {/each}
             </span>
@@ -109,9 +154,13 @@
 
   <!-- ── Pod grid / list ─────────────────────────────────────── -->
   {#if sortedPods.length > 0}
-    {#if viewMode === 'default'}
-      {@const regularPods = sortedPods.filter(p => p.ownerKind !== 'DaemonSet')}
-      {@const daemonSetPods = sortedPods.filter(p => p.ownerKind === 'DaemonSet')}
+    {#if viewMode === "default"}
+      {@const regularPods = sortedPods.filter(
+        (p) => p.ownerKind !== "DaemonSet",
+      )}
+      {@const daemonSetPods = sortedPods.filter(
+        (p) => p.ownerKind === "DaemonSet",
+      )}
 
       <div class="pods-wrapper">
         <div class="pod-container pod-grid">
@@ -120,7 +169,7 @@
               {pod}
               {sizingMetric}
               {viewMode}
-              nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
+              nodeCapacity={sizingMetric.startsWith("cpu") ? cpuCap : memCap}
               {highlightKey}
               {onHighlight}
             />
@@ -137,7 +186,7 @@
                 {pod}
                 {sizingMetric}
                 {viewMode}
-                nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
+                nodeCapacity={sizingMetric.startsWith("cpu") ? cpuCap : memCap}
                 {highlightKey}
                 {onHighlight}
               />
@@ -152,7 +201,7 @@
             {pod}
             {sizingMetric}
             {viewMode}
-            nodeCapacity={sizingMetric.startsWith('cpu') ? cpuCap : memCap}
+            nodeCapacity={sizingMetric.startsWith("cpu") ? cpuCap : memCap}
             {highlightKey}
             {onHighlight}
           />
@@ -165,247 +214,320 @@
 </article>
 
 <style>
-.node-card {
-  border-radius: 12px;
-  padding: 0.65rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  transition: box-shadow 0.2s;
-}
-.node-card:hover {
-  box-shadow: 0 0 0 1px var(--accent), 0 8px 24px rgba(0,0,0,0.15);
-}
-.node-card.not-ready {
-  border-color: rgba(244,63,94,0.3);
-}
+  .node-card {
+    position: relative;
+    z-index: 1;
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    transition:
+      box-shadow 0.2s,
+      z-index 0.2s;
+  }
+  .node-card:hover,
+  .node-card:focus-within {
+    z-index: 30;
+    box-shadow:
+      0 0 0 1px var(--accent),
+      0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+  .node-card.not-ready {
+    border-color: rgba(244, 63, 94, 0.3);
+  }
 
-/* Header */
-.node-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.node-title-wrap {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.5rem;
-}
-.node-title-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  overflow: hidden;
-  min-width: 0;
-}
-.node-ready-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--pod-error);
-  flex-shrink: 0;
-}
-.node-ready-dot.ready { background: var(--pod-running); }
+  /* Header */
+  .node-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .node-title-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .node-title-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    min-width: 0;
+  }
+  .node-ready-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pod-error);
+    flex-shrink: 0;
+  }
+  .node-ready-dot.ready {
+    background: var(--pod-running);
+  }
 
-.node-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.01em;
-}
+  .node-name-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    text-align: left;
+    border-radius: 4px;
+  }
+  .node-name-btn:hover .node-name,
+  .node-name-btn:focus-visible .node-name {
+    color: var(--accent);
+  }
 
-.node-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem;
-}
-.role-badge, .instance-badge, .zone-badge, .taints-badge-trigger {
-  font-size: 0.6rem;
-  font-weight: 600;
-  padding: 0.1rem 0.45rem;
-  border-radius: 5px;
-  letter-spacing: 0.03em;
-}
-.role-badge     { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
-.instance-badge { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
-.zone-badge     { background: var(--bg-elevated); color: var(--text-muted); border: 1px solid var(--border); }
+  .node-name {
+    display: inline-block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.01em;
+    transition: color 0.15s ease;
+  }
 
-.taints-badge-trigger {
-  background: var(--bg-elevated);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  position: relative;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  font-family: inherit;
-  margin: 0;
-}
-.taints-badge-trigger:hover, .taints-badge-trigger:focus-within {
-  background: var(--border);
-  color: var(--text-primary);
-}
+  .copied-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-.taints-tooltip {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 100;
-  width: max-content;
-  max-width: 280px;
-  padding: 0.6rem 0.75rem;
-  border-radius: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-4px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  background: var(--bg-tooltip, rgba(15, 23, 42, 0.95));
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
+  .node-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .role-badge,
+  .instance-badge,
+  .zone-badge,
+  .taints-badge-trigger {
+    font-size: 0.6rem;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 5px;
+    letter-spacing: 0.03em;
+  }
+  .role-badge {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+    border: 1px solid rgba(99, 102, 241, 0.25);
+  }
+  .instance-badge {
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
+  .zone-badge {
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+  }
 
-.taints-badge-trigger:hover .taints-tooltip,
-.taints-badge-trigger:focus-within .taints-tooltip {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
-}
+  .taints-badge-trigger {
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    font-family: inherit;
+    margin: 0;
+  }
+  .taints-badge-trigger:hover,
+  .taints-badge-trigger:focus-within {
+    background: var(--border);
+    color: var(--text-primary);
+    z-index: 100;
+  }
 
-.taints-tooltip-header {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
-  margin-bottom: 0.4rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 0.25rem;
-  text-align: left;
-}
+  .taints-tooltip {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 100;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 2rem));
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition:
+      opacity 0.15s ease,
+      transform 0.15s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    background: var(--bg-tooltip, rgba(15, 23, 42, 0.95));
+    border: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 
-.taints-list {
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
+  .taints-badge-trigger:hover .taints-tooltip,
+  .taints-badge-trigger:focus-within .taints-tooltip {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
 
-.taint-item {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.6rem;
-  line-height: 1.2;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.1rem;
-  color: var(--text-primary);
-  text-align: left;
-}
+  .taints-tooltip-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 0.25rem;
+    text-align: left;
+  }
 
-.taint-key {
-  color: #a7f3d0;
-}
+  .taints-list {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
 
-.taint-eq, .taint-sep {
-  color: var(--text-muted);
-}
+  .taint-item {
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    line-height: 1.2;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.1rem;
+    color: var(--text-primary);
+    text-align: left;
+  }
 
-.taint-val {
-  color: #e0f2fe;
-}
+  .taint-key {
+    color: #a7f3d0;
+  }
 
-.taint-effect {
-  font-weight: 600;
-  padding: 0.05rem 0.2rem;
-  border-radius: 3px;
-}
+  .taint-eq,
+  .taint-sep {
+    color: var(--text-muted);
+  }
 
-.taint-effect.noschedule {
-  color: #fca5a5;
-  background: rgba(239, 68, 68, 0.15);
-}
+  .taint-val {
+    color: #e0f2fe;
+  }
 
-.taint-effect.noexecute {
-  color: #fda4af;
-  background: rgba(244, 63, 94, 0.15);
-}
+  .taint-effect {
+    font-weight: 600;
+    padding: 0.05rem 0.2rem;
+    border-radius: 3px;
+  }
 
-.taint-effect.prefernoschedule {
-  color: #fde047;
-  background: rgba(234, 179, 8, 0.15);
-}
+  .taint-effect.noschedule {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.15);
+  }
 
-.node-age {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+  .taint-effect.noexecute {
+    color: #fda4af;
+    background: rgba(244, 63, 94, 0.15);
+  }
 
-/* Capacity */
-.node-capacity {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.node-capacity .sep { opacity: 0.4; }
-.node-capacity .warn { color: #f59e0b; }
+  .taint-effect.prefernoschedule {
+    color: #fde047;
+    background: rgba(234, 179, 8, 0.15);
+  }
 
-/* Gauges */
-.node-gauges {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.45rem;
-  background: var(--bg-elevated);
-  border-radius: 8px;
-  border: 1px solid var(--border);
-}
+  .node-age {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
 
-.ds-divider {
-  width: 100%;
-  height: 1px;
-  border-top: 1px dashed var(--border);
-  margin: 0.1rem 0;
-  opacity: 0.6;
-}
+  /* Capacity */
+  .node-capacity {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .node-capacity .sep {
+    opacity: 0.4;
+  }
+  .node-capacity .warn {
+    color: #f59e0b;
+  }
 
-.pods-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
+  /* Gauges */
+  .node-gauges {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.45rem;
+    background: var(--bg-elevated);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
 
-/* Pod container */
-.pod-container { margin-top: 0.15rem; }
+  .ds-divider {
+    width: 100%;
+    height: 1px;
+    border-top: 1px dashed var(--border);
+    margin: 0.1rem 0;
+    opacity: 0.6;
+  }
 
-.pod-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  align-content: flex-start;
-  min-height: 16px;
-}
+  .pods-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
 
-.pod-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
+  /* Pod container */
+  .pod-container {
+    margin-top: 0.15rem;
+  }
 
-.no-pods {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 1rem;
-}
+  .pod-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-content: flex-start;
+    min-height: 16px;
+  }
+
+  .pod-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .no-pods {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem;
+  }
 </style>

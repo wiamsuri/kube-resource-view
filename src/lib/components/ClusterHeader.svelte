@@ -3,6 +3,12 @@
   import { getClusterTotals, nodes, pods } from '$lib/k8sStore.svelte.js';
   import logoSmall from '$lib/assets/logo-small.png';
 
+  interface Props {
+    sseStatus?: 'connecting' | 'connected' | 'error';
+  }
+
+  let { sseStatus = 'connected' }: Props = $props();
+
   const totals = $derived(getClusterTotals());
   const nodeCount = $derived(nodes.size);
   const podCount  = $derived(pods.size);
@@ -31,6 +37,22 @@
       <span class="pill-icon pod-icon">◼</span>
       <span class="pill-value">{podCount}</span>
       <span class="pill-label">pods</span>
+    </div>
+
+    <!-- SSE status indicator -->
+    <div
+      class="sse-indicator"
+      class:error={sseStatus === 'error'}
+      class:connecting={sseStatus === 'connecting'}
+    >
+      <span class="sse-dot"></span>
+      {#if sseStatus === 'connected'}
+        Live
+      {:else if sseStatus === 'connecting'}
+        Connecting…
+      {:else}
+        Reconnecting…
+      {/if}
     </div>
 
     <div class="divider"></div>
@@ -231,4 +253,46 @@
 .legend-item.req { background: rgba(99,102,241,0.15);  color: #818cf8; }
 .legend-item.lim { background: rgba(245,158,11,0.15);  color: #fbbf24; }
 .legend-item.use { background: rgba(16,185,129,0.15);  color: #34d399; }
+
+/* SSE indicator */
+.sse-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--pod-running);
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  opacity: 0.9;
+}
+.sse-indicator.connecting {
+  color: var(--pod-pending);
+}
+.sse-indicator.error {
+  color: var(--pod-error);
+}
+
+.sse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+  }
+}
 </style>
