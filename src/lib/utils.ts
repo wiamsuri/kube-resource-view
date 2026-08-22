@@ -23,8 +23,9 @@ export function formatMemory(bytes: number): string {
 /** Parse Kubernetes CPU string to millicores */
 export function parseCpu(cpuStr: string | undefined): number {
   if (!cpuStr) return 0;
-  if (cpuStr.endsWith('m')) return parseInt(cpuStr.slice(0, -1), 10);
-  if (cpuStr.endsWith('n')) return parseInt(cpuStr.slice(0, -1), 10) / 1_000_000;
+  if (cpuStr.endsWith('m')) return parseFloat(cpuStr.slice(0, -1));
+  if (cpuStr.endsWith('u')) return parseFloat(cpuStr.slice(0, -1)) / 1000;
+  if (cpuStr.endsWith('n')) return parseFloat(cpuStr.slice(0, -1)) / 1_000_000;
   return parseFloat(cpuStr) * 1000;
 }
 
@@ -36,17 +37,23 @@ export function parseMemory(memStr: string | undefined): number {
     Mi: 1024 ** 2,
     Gi: 1024 ** 3,
     Ti: 1024 ** 4,
+    Pi: 1024 ** 5,
+    Ei: 1024 ** 6,
+    k: 1000,
     K: 1000,
     M: 1000 ** 2,
     G: 1000 ** 3,
     T: 1000 ** 4,
+    P: 1000 ** 5,
+    E: 1000 ** 6,
   };
   for (const [suffix, factor] of Object.entries(units)) {
     if (memStr.endsWith(suffix)) {
       return parseFloat(memStr.slice(0, -suffix.length)) * factor;
     }
   }
-  return parseInt(memStr, 10);
+  const parsed = Number(memStr);
+  return isNaN(parsed) ? 0 : parsed;
 }
 
 // ─── Age formatting ─────────────────────────────────────────────────────────
@@ -65,11 +72,24 @@ export function formatAge(isoTimestamp: string): string {
 
 // ─── Pod color ──────────────────────────────────────────────────────────────
 
+const POD_ERROR_REASONS = new Set([
+  'CrashLoopBackOff',
+  'Error',
+  'OOMKilled',
+  'ImagePullBackOff',
+  'ErrImagePull',
+  'CreateContainerConfigError',
+  'CreateContainerError',
+  'InvalidImageName',
+  'ContainerCannotRun',
+  'DeadlineExceeded',
+]);
+
 /** Returns a CSS color class for a pod based on phase/ready state */
 export function getPodColorClass(pod: PodInfo): string {
   const { phase, ready, containerStatuses } = pod;
-  const hasCrash = containerStatuses.some(
-    (c) => c.reason === 'CrashLoopBackOff' || c.reason === 'Error' || c.reason === 'OOMKilled'
+  const hasCrash = (containerStatuses ?? []).some(
+    (c) => (c.reason && POD_ERROR_REASONS.has(c.reason)) || c.reason?.includes('Error') || c.reason?.includes('BackOff')
   );
   if (hasCrash || phase === 'Failed') return 'pod-error';
   if (phase === 'Succeeded') return 'pod-succeeded';

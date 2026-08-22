@@ -44,10 +44,20 @@
   let bannerDismissed = $state(false);
   let sortBy = $state<NodeSortOrder>("age-oldest");
 
-  // Detect initial dark mode from the class applied by layout
-  $effect(() => {
-    darkMode = document.documentElement.classList.contains("dark");
-  });
+  function initTheme() {
+    const saved = localStorage.getItem("theme");
+    if (
+      saved === "dark" ||
+      (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches) ||
+      document.documentElement.classList.contains("dark")
+    ) {
+      darkMode = true;
+      document.documentElement.classList.add("dark");
+    } else {
+      darkMode = false;
+      document.documentElement.classList.remove("dark");
+    }
+  }
 
   function toggleDark() {
     darkMode = !darkMode;
@@ -186,6 +196,7 @@
   }
 
   onMount(() => {
+    initTheme();
     connectSSE();
     return () => {
       sse?.close();

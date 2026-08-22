@@ -1,16 +1,7 @@
 <script lang="ts">
   import './layout.css';
-  import { onMount } from 'svelte';
 
   let { children } = $props();
-
-  onMount(() => {
-    // Restore persisted theme
-    const saved = localStorage.getItem('theme');
-    if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      document.documentElement.classList.add('dark');
-    }
-  });
 </script>
 
 <svelte:head>
