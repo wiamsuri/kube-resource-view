@@ -27,9 +27,12 @@ graph TD
 - **Browser-Side State**: State is kept in-memory on the client via Svelte 5 runes (`$state`). When a connection drops or points to a different backend replica, the frontend cleanly re-hydrates.
 
 ### Data Synchronization Flow
-1. **Initial Load**: SvelteKit's `load` function fetches the current nodes, pods, and metrics from the K8s API server on the backend, returning them as initial data for instant server-side / client-side hydration.
+1. **Initial Load**: SvelteKit's `load` function fetches the current nodes, pods, and metrics from the K8s API server on the backend, merges metrics with resources, computes aggregates, and returns them as initial data for instant server-side / client-side hydration.
 2. **Real-time Stream**: Immediately after page render, the client opens a Server-Sent Events (SSE) stream to `/api/k8s/stream`.
-3. **SSE updates**: The backend watches node and pod resource events and polls the K8s Metrics Server (`metrics.k8s.io`) every 10 seconds, pushing updates (`ADD`, `UPDATE`, `DELETE`, `METRICS`) to the client.
+3. **SSE Updates**:
+   - **Resource Events**: The backend uses Informers (`k8s.makeInformer`) to watch Node and Pod API resources. It broadcasts `ADD_NODE`, `UPDATE_NODE`, `DELETE_NODE`, `ADD_POD`, `UPDATE_POD`, and `DELETE_POD` events to clients, automatically handling list operations, event watchers, and reconnects.
+   - **Metrics Polling**: The backend polls the K8s Metrics Server (`metrics.k8s.io`) every 10 seconds, pushing `NODE_METRICS` and `POD_METRICS` events. If the Metrics Server is unreachable for two consecutive intervals, it pushes `METRICS_UNAVAILABLE`, prompting the client to display the warning banner.
+   - **Heartbeats**: Keeps connections alive by sending a periodic `HEARTBEAT` event every 20 seconds.
 
 ---
 
@@ -41,18 +44,26 @@ kube-resource-view/
 ├── src/
 │   ├── lib/
 │   │   ├── components/        # Svelte UI Components
-│   │   │   ├── ClusterHeader.svelte    # Header stats & aggregated cluster usage
-│   │   │   ├── ControlsBar.svelte      # Bottom filter, search, & toggle controls
-│   │   │   ├── NodeCard.svelte         # Individual node layout & resource gauges
-│   │   │   ├── PodBlock.svelte         # Grid/list representation of individual pods
-│   │   │   ├── PodTooltip.svelte       # Floating hover tooltip
-│   │   │   └── ResourceGauge.svelte    # Custom CPU/MEM utilization bar
+│   │   │   ├── ClusterHeader.svelte            # Header stats & aggregated cluster usage
+│   │   │   ├── ControlsBar.svelte              # Bottom filter, search, & toggle controls
+│   │   │   ├── MetricsUnavailableBanner.svelte # Warning banner displayed when Metrics Server is unreachable
+│   │   │   ├── NodeCard.svelte                 # Individual node layout & resource gauges
+│   │   │   ├── PodBlock.svelte                 # Grid/list representation of individual pods
+│   │   │   ├── PodTooltip.svelte               # Floating hover tooltip
+│   │   │   ├── ResourceGauge.svelte            # Custom CPU/MEM utilization bar
+│   │   │   └── UnassignedPodsWidget.svelte     # Floating widget for pending/unassigned pods (no nodeName)
+│   │   ├── server/            # Backend Kubernetes Helpers
+│   │   │   ├── k8sClient.ts                    # K8s config loading & API client instantiation
+│   │   │   └── k8sHelpers.ts                   # Mapping raw K8s API objects to internal types
 │   │   ├── k8sStore.svelte.ts # Svelte 5 state store (syncs SSE, manages global tooltips)
 │   │   ├── types.ts           # Typescript interfaces for K8s objects & SSE payloads
 │   │   └── utils.ts           # Helper functions (byte formatting, status coloring)
 │   └── routes/
 │       ├── api/k8s/stream/    # Server-Sent Events endpoint
 │       │   └── +server.ts
+│       ├── health/            # Health check endpoint for liveness/readiness probes
+│       │   └── +server.ts
+│       ├── +layout.svelte     # SvelteKit layout wrapper with title/meta tags
 │       ├── +page.server.ts    # Initial SSR / load data fetching
 │       ├── +page.svelte       # Layout container & global tooltip renderer
 │       └── layout.css         # Base stylesheet & dark mode variables
@@ -62,7 +73,20 @@ kube-resource-view/
 
 ---
 
-## 4. Development & Verification Guide
+## 4. Key Architectural Patterns & Svelte 5 Reactivity
+
+- **Svelte 5 Runes & Reactivity**: Global state uses `SvelteMap` (`nodes` and `pods`) to reactively update on SSE events. Svelte's `$derived` and `$derived.by` runes are used to compute:
+  - Per-node pod filtering, sorting, and resource aggregates.
+  - Aggregated cluster-wide totals (CPU/Memory limits, requests, and usage).
+  - Unassigned pending pods filter list.
+- **Resource Sizing Metrics**: Supports `uniform` size representation or scaling pods relative to node capacity via:
+  - CPU: Requests, Limits, and live usage.
+  - Memory: Requests, Limits, and live usage.
+- **Robust Kubernetes Client Handling**: The backend automatically falls back to in-cluster service account configuration if local kubeconfig is absent, and auto-selects preferred local contexts like `colima`, `docker-desktop`, `minikube`, and `kind-kind`.
+
+---
+
+## 5. Development & Verification Guide
 
 ### Run Locally
 To run the SvelteKit development server locally:

@@ -1,5 +1,7 @@
 # Kube Resource View
 
+![Kube Resource View Screenshot](docs/kube-resource-view.png)
+
 **Kube Resource View** is an ultra-lightweight, zero-dependency, real-time visualization dashboard designed to give cluster administrators an instant, intuitive look at CPU and Memory allocation and consumption.
 
 Unlike heavy monitoring setups (like Prometheus, Grafana, or OpenTelemetry) that take hours to configure, require persistent storage, and consume substantial cluster resources themselves, Kube Resource View is **stateless, instant, and deployable in seconds**.
