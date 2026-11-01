@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type { NodeInfo, PodInfo } from "$lib/types.js";
-  import type { SizingMetric, ViewMode } from "$lib/types.js";
-  import { formatCpu, formatMemory, formatAge } from "$lib/utils.js";
+  import type { NodeInfo, PodInfo } from "#lib/types.js";
+  import type { SizingMetric, ViewMode } from "#lib/types.js";
+  import { formatCpu, formatMemory, formatAge } from "#lib/utils.js";
   import { onDestroy } from "svelte";
   import ResourceGauge from "./ResourceGauge.svelte";
   import PodBlock from "./PodBlock.svelte";

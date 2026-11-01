@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { SizingMetric, ViewMode, NodeSortOrder } from '$lib/types.js';
-  import { getAllNamespaces } from '$lib/k8sStore.svelte.js';
+  import type { SizingMetric, ViewMode, NodeSortOrder } from '#lib/types.js';
+  import { getAllNamespaces } from '#lib/k8sStore.svelte.js';
 
   interface Props {
     search: string;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PodInfo, SizingMetric, ViewMode } from '$lib/types.js';
+  import type { PodInfo, SizingMetric, ViewMode } from '#lib/types.js';
   import PodBlock from './PodBlock.svelte';
 
   interface Props {

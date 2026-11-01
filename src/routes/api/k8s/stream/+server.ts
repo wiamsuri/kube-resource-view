@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types.js';
-import { getCoreV1Api, getCustomObjectsApi, getKubeConfig } from '$lib/server/k8sClient.js';
-import { nodeFromK8s, podFromK8s } from '$lib/server/k8sHelpers.js';
-import { parseCpu, parseMemory } from '$lib/utils.js';
-import type { SSEEvent, NodeMetricsPayload, PodMetricsPayload } from '$lib/types.js';
+import { getCoreV1Api, getCustomObjectsApi, getKubeConfig } from '#lib/server/k8sClient.js';
+import { nodeFromK8s, podFromK8s } from '#lib/server/k8sHelpers.js';
+import { parseCpu, parseMemory } from '#lib/utils.js';
+import type { SSEEvent, NodeMetricsPayload, PodMetricsPayload } from '#lib/types.js';
 import * as k8s from '@kubernetes/client-node';
 
 const METRICS_POLL_MS = 10_000;

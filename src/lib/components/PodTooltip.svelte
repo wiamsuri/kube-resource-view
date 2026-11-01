@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { PodInfo } from '$lib/types.js';
-  import { formatCpu, formatMemory, formatAge } from '$lib/utils.js';
+  import type { PodInfo } from '#lib/types.js';
+  import { formatCpu, formatMemory, formatAge } from '#lib/utils.js';
 
   interface Props {
     pod: PodInfo;

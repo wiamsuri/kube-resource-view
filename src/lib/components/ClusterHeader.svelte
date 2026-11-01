@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { formatCpu, formatMemory } from '$lib/utils.js';
-  import { getClusterTotals, nodes, pods } from '$lib/k8sStore.svelte.js';
-  import logoSmall from '$lib/assets/logo-small.png';
+  import { formatCpu, formatMemory } from '#lib/utils.js';
+  import { getClusterTotals, nodes, pods } from '#lib/k8sStore.svelte.js';
+  import logoSmall from '#lib/assets/logo-small.png';
 
   interface Props {
     sseStatus?: 'connecting' | 'connected' | 'error';

@@ -1,8 +1,8 @@
 import type { PageServerLoad } from './$types.js';
-import { getCoreV1Api, getCustomObjectsApi } from '$lib/server/k8sClient.js';
-import { nodeFromK8s, podFromK8s } from '$lib/server/k8sHelpers.js';
-import { parseCpu, parseMemory } from '$lib/utils.js';
-import type { InitialData, NodeMetricsPayload, PodMetricsPayload } from '$lib/types.js';
+import { getCoreV1Api, getCustomObjectsApi } from '#lib/server/k8sClient.js';
+import { nodeFromK8s, podFromK8s } from '#lib/server/k8sHelpers.js';
+import { parseCpu, parseMemory } from '#lib/utils.js';
+import type { InitialData, NodeMetricsPayload, PodMetricsPayload, PodInfo } from '#lib/types.js';
 
 export const load: PageServerLoad = async () => {
   const coreApi = getCoreV1Api();
@@ -21,8 +21,8 @@ export const load: PageServerLoad = async () => {
     ? nodesRes.value.items.map(nodeFromK8s)
     : [];
 
-  const pods: import('$lib/types.js').PodInfo[] = podsRes.status === 'fulfilled'
-    ? podsRes.value.items.map(podFromK8s).filter((p): p is import('$lib/types.js').PodInfo => p !== null)
+  const pods: PodInfo[] = podsRes.status === 'fulfilled'
+    ? podsRes.value.items.map(podFromK8s).filter((p): p is PodInfo => p !== null)
     : [];
 
   // Merge metrics into nodes

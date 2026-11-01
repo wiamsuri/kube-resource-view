@@ -5,7 +5,7 @@
     ViewMode,
     PodInfo,
     NodeSortOrder,
-  } from "$lib/types.js";
+  } from "#lib/types.js";
   import { onMount } from "svelte";
 
   import {
@@ -16,14 +16,14 @@
     applyInitialData,
     applySSEEvent,
     tooltipStore,
-  } from "$lib/k8sStore.svelte.js";
+  } from "#lib/k8sStore.svelte.js";
 
-  import ClusterHeader from "$lib/components/ClusterHeader.svelte";
-  import ControlsBar from "$lib/components/ControlsBar.svelte";
-  import NodeCard from "$lib/components/NodeCard.svelte";
-  import MetricsUnavailableBanner from "$lib/components/MetricsUnavailableBanner.svelte";
-  import PodTooltip from "$lib/components/PodTooltip.svelte";
-  import UnassignedPodsWidget from "$lib/components/UnassignedPodsWidget.svelte";
+  import ClusterHeader from "#lib/components/ClusterHeader.svelte";
+  import ControlsBar from "#lib/components/ControlsBar.svelte";
+  import NodeCard from "#lib/components/NodeCard.svelte";
+  import MetricsUnavailableBanner from "#lib/components/MetricsUnavailableBanner.svelte";
+  import PodTooltip from "#lib/components/PodTooltip.svelte";
+  import UnassignedPodsWidget from "#lib/components/UnassignedPodsWidget.svelte";
 
   let { data }: { data: PageData } = $props();
 

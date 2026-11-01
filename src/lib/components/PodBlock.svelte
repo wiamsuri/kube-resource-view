@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { PodInfo } from '$lib/types.js';
-  import type { SizingMetric, ViewMode } from '$lib/types.js';
-  import { getPodColorClass, getPodSize, getControllerKey } from '$lib/utils.js';
-  import { formatCpu, formatMemory, formatAge } from '$lib/utils.js';
-  import { tooltipStore } from '$lib/k8sStore.svelte.js';
+  import type { PodInfo } from '#lib/types.js';
+  import type { SizingMetric, ViewMode } from '#lib/types.js';
+  import { getPodColorClass, getPodSize, getControllerKey } from '#lib/utils.js';
+  import { formatCpu, formatMemory, formatAge } from '#lib/utils.js';
+  import { tooltipStore } from '#lib/k8sStore.svelte.js';
 
   interface Props {
     pod: PodInfo;
