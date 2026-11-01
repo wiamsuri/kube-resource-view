@@ -41,9 +41,9 @@
     {/if}
   </div>
   <div class="gauge-row-labels">
+    <div class="gl use {isOver ? 'over' : ''}"><span class="gl-dot"></span>{formatValue(usage)}</div>
     <div class="gl req"><span class="gl-dot"></span>{formatValue(request)}</div>
     <div class="gl lim"><span class="gl-dot"></span>{formatValue(limit)}</div>
-    <div class="gl use {isOver ? 'over' : ''}"><span class="gl-dot"></span>{formatValue(usage)}</div>
   </div>
 </div>
 

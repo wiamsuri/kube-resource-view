@@ -101,9 +101,9 @@
 
     <!-- Legend -->
     <div class="legend">
+      <span class="legend-item use">Use</span>
       <span class="legend-item req">Req</span>
       <span class="legend-item lim">Lim</span>
-      <span class="legend-item use">Use</span>
     </div>
   </div>
 </header>
